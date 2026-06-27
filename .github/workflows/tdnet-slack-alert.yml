@@ -1,8 +1,6 @@
 name: TDnet Slack alert
 
 on:
-  schedule:
-    - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       test_message:

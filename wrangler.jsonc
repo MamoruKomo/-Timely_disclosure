@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "tdnet-slack-alert",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-06-27",
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "SLACK_CHANNEL_ID": "C0ASFHVU94L",
+    "MAX_NOTIFY": "30"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "TDNET_STATE",
+      "id": "06d4ea92625d4242aa02b2e13d6bfc11"
+    }
+  ]
+}

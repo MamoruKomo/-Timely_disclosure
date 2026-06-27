@@ -1,0 +1,14 @@
+{
+  "name": "tdnet-slack-alert",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/worker.test.js",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev --test-scheduled"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

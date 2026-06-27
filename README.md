@@ -1,8 +1,19 @@
 # TDnet Slack Alert
 
-適時開示の新着を5分おきに確認し、Slackチャンネル `C0ASFHVU94L` に投稿する小さなGitHub Actionsプロジェクトです。
+TDnet公式の適時開示一覧を監視し、新着だけSlackへ投稿するbotです。
 
-投稿形式:
+現在の主運用は **Cloudflare Workers Cron + KV** です。GitHub Actionsの定期実行は停止してあり、Actions枠を消費しません。
+
+## 通知間隔
+
+Cloudflare Workers Cronで1分おきに監視します。
+
+- 0秒通知ではなく、通常は0〜60秒程度の遅れ
+- TDnet公式Webページを取得して差分検知
+- KVに送信済みIDを保存して重複投稿を防止
+- 初回実行は既存開示を既読登録するだけでSlack投稿しない
+
+## Slack投稿形式
 
 ```text
 証券コード: 9983
@@ -12,41 +23,94 @@
 PDFのりんく: https://www.release.tdnet.info/inbs/140120260623123400.pdf
 ```
 
-新着が複数ある場合は、同じ形式のブロックを `---` で区切って1投稿にまとめます。
+新着が複数ある場合は `---` で区切って1投稿にまとめます。
 
-## 仕組み
+## Cloudflare Workersで使う
 
-- 取得元: TDnet公式の開示一覧 `https://www.release.tdnet.info/inbs/I_list_001_YYYYMMDD.html`
-- フォールバック: TDnet公式が取れない場合のみ、Kabutanの適時開示一覧 `https://kabutan.jp/disclosures/`
-- PDF: TDnet公式PDF `https://www.release.tdnet.info/inbs/<doc_id>.pdf`
-- 重複防止: `data/tdnet_state.json` に送信済みIDを保存
-- 初回実行: 既存の開示をベースライン登録するだけで、Slackには送りません
-- 2回目以降: 新着IDだけSlackへ送信します
+### 1. 依存関係
 
-TDnet公式は1日分のページを `I_list_001_YYYYMMDD.html`, `I_list_002_YYYYMMDD.html`, ... の順に確認します。会社名、コード、タイトル、PDFリンクは公式HTMLの `kjTime`, `kjCode`, `kjName`, `kjTitle` から取得します。
+```bash
+npm install
+```
 
-## GitHub Actionsで使う
+### 2. KV namespaceを作成
 
-1. このフォルダの中身を新しいGitHubリポジトリに置きます。
-2. Slackアプリを作成し、Bot Token Scopes に `chat:write` を付けます。
-3. Botをチャンネル `C0ASFHVU94L` に参加させます。
-4. GitHub repo の `Settings -> Secrets and variables -> Actions` に `SLACK_BOT_TOKEN` を追加します。
-5. `.github/workflows/tdnet-slack-alert.yml` を手動実行します。
+このrepoでは作成済みのKV namespace IDを `wrangler.jsonc` に設定済みです。
 
-Incoming Webhookを使う場合は、`SLACK_BOT_TOKEN` の代わりに `SLACK_WEBHOOK_URL` をsecretへ入れてください。その場合、投稿先チャンネルはWebhook側の設定に従います。
+作り直す場合:
 
-## ローカル確認
+```bash
+npx wrangler kv namespace create TDNET_STATE
+```
+
+出力された `id` を `wrangler.jsonc` の `kv_namespaces[0].id` に入れてください。
+
+既存のPython版stateはremote KVへ移行済みです。
+
+### 3. Slack secretを登録
+
+Bot Tokenを使う場合:
+
+```bash
+npx wrangler secret put SLACK_BOT_TOKEN
+```
+
+Incoming Webhookを使う場合:
+
+```bash
+npx wrangler secret put SLACK_WEBHOOK_URL
+```
+
+手動テスト送信用の管理トークン:
+
+```bash
+npx wrangler secret put ADMIN_TOKEN
+```
+
+Slackの投稿先は `wrangler.jsonc` の `SLACK_CHANNEL_ID` で指定します。チャンネルID自体はsecretではありません。
+
+### 4. テスト
+
+```bash
+npm test
+python3 -m unittest discover -s tests
+python3 scripts/tdnet_slack_alert.py --dry-run
+```
+
+### 5. デプロイ
+
+```bash
+npx wrangler deploy
+```
+
+デプロイ後は1分ごとに自動監視します。
+
+## 手動確認
+
+Health check:
+
+```bash
+curl https://<worker-url>/health
+```
+
+Slackテスト送信:
+
+```bash
+curl -X POST https://<worker-url>/test \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"TDnet Slack alert test from Cloudflare Workers"}'
+```
+
+## GitHub Actions版
+
+`.github/workflows/tdnet-slack-alert.yml` は手動実行専用のバックアップとして残しています。`schedule` は削除済みなので、通常運用ではActions枠を消費しません。
+
+## ローカルPython版
+
+既存のPython版もバックアップ兼ローカル確認用として残しています。
 
 ```bash
 python3 -m unittest discover -s tests
 python3 scripts/tdnet_slack_alert.py --dry-run
-python3 scripts/tdnet_slack_alert.py --dry-run --date 20260627
-```
-
-実際にローカルからSlackへ送る場合:
-
-```bash
-export SLACK_BOT_TOKEN='xoxb-...'
-export SLACK_CHANNEL_ID='C0ASFHVU94L'
-python3 scripts/tdnet_slack_alert.py --state data/tdnet_state.json
 ```
