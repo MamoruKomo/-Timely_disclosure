@@ -593,7 +593,32 @@ def main() -> int:
     parser.add_argument("--max-notify", type=int, default=30, help="Maximum disclosures to send per run")
     parser.add_argument("--date", default=datetime.now(JST).strftime("%Y%m%d"), help="TDnet date as YYYYMMDD")
     parser.add_argument("--dry-run", action="store_true", help="Fetch and print without posting or saving state")
+    parser.add_argument(
+        "--test-message",
+        default=os.environ.get("TDNET_TEST_MESSAGE", ""),
+        help="Send this Slack test message and skip TDnet polling",
+    )
     args = parser.parse_args()
+
+    test_message = normalize_spaces(args.test_message)
+    if test_message:
+        channel_id = normalize_spaces(os.environ.get("SLACK_CHANNEL_ID") or DEFAULT_SLACK_CHANNEL_ID)
+        result = {
+            "test_message": "true",
+            "posted": "false" if args.dry_run else "true",
+            "channel_id": channel_id,
+        }
+        if args.dry_run:
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            print(test_message)
+            return 0
+
+        bot_token = normalize_spaces(os.environ.get("SLACK_BOT_TOKEN") or "")
+        webhook_url = normalize_spaces(os.environ.get("SLACK_WEBHOOK_URL") or "")
+        post_to_slack(test_message, channel_id=channel_id, bot_token=bot_token, webhook_url=webhook_url)
+        append_github_output(result, os.environ.get("GITHUB_OUTPUT", ""))
+        print(json.dumps(result, ensure_ascii=False))
+        return 0
 
     state_path = Path(args.state)
     state = load_state(state_path)
