@@ -73,6 +73,14 @@ function nowIsoJst(date = new Date()) {
   return `${local.replace(" ", "T")}+09:00`;
 }
 
+function isJstWeekday(date = new Date()) {
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Tokyo",
+    weekday: "short",
+  }).format(date);
+  return weekday !== "Sat" && weekday !== "Sun";
+}
+
 function parseTdnetDisclosures(html, dateYyyymmdd) {
   const dateDisplay = `${dateYyyymmdd.slice(0, 4)}-${dateYyyymmdd.slice(4, 6)}-${dateYyyymmdd.slice(6, 8)}`;
   const rows = [...String(html).matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)];
@@ -333,6 +341,11 @@ export default {
   },
 
   async scheduled(_event, env, ctx) {
+    if (!isJstWeekday()) {
+      console.log(JSON.stringify({ level: "info", skipped: true, reason: "jst_weekend" }));
+      return;
+    }
+
     ctx.waitUntil(
       pollTdnet(env)
         .then((result) => console.log(JSON.stringify({ level: "info", ...result })))
@@ -345,6 +358,7 @@ export {
   buildNextState,
   buildSlackMessage,
   extractTdnetDocId,
+  isJstWeekday,
   parseTdnetDisclosures,
   pollTdnet,
   yyyymmddInJst,

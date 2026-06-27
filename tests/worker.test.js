@@ -4,6 +4,7 @@ import {
   buildNextState,
   buildSlackMessage,
   extractTdnetDocId,
+  isJstWeekday,
   parseTdnetDisclosures,
   pollTdnet,
   yyyymmddInJst,
@@ -47,6 +48,12 @@ describe("worker TDnet parser", () => {
 
   it("formats JST date keys", () => {
     assert.equal(yyyymmddInJst(new Date("2026-06-26T15:01:00Z")), "20260627");
+  });
+
+  it("detects JST weekdays and weekends", () => {
+    assert.equal(isJstWeekday(new Date("2026-06-26T14:59:00Z")), true);
+    assert.equal(isJstWeekday(new Date("2026-06-26T15:00:00Z")), false);
+    assert.equal(isJstWeekday(new Date("2026-06-28T15:00:00Z")), true);
   });
 
   it("parses official TDnet list rows", () => {

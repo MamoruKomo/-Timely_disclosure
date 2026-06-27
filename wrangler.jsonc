@@ -4,7 +4,11 @@
   "main": "src/worker.js",
   "compatibility_date": "2026-06-27",
   "triggers": {
-    "crons": ["* * * * *"]
+    "crons": [
+      "* 15-23 * * 0",
+      "* * * * 1-4",
+      "* 0-14 * * 5"
+    ]
   },
   "observability": {
     "enabled": true,
