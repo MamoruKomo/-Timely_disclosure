@@ -1,6 +1,28 @@
 {
   "version": 1,
-  "last_checked_jst": null,
-  "seen_ids": [],
-  "items": []
+  "last_checked_jst": "2026-06-27T21:01:35+09:00",
+  "seen_ids": [
+    "tdnet:9989:140120260626582435",
+    "tdnet:6928:140120260627582543"
+  ],
+  "items": [
+    {
+      "id": "tdnet:9989:140120260626582435",
+      "code": "9989",
+      "company": "サンドラッグ",
+      "date_jst": "2026-06-27 14:00 JST",
+      "title": "譲渡制限付株式報酬としての自己株式の処分に関するお知らせ",
+      "pdf_url": "https://www.release.tdnet.info/inbs/140120260626582435.pdf",
+      "source_url": "https://www.release.tdnet.info/inbs/140120260626582435.pdf"
+    },
+    {
+      "id": "tdnet:6928:140120260627582543",
+      "code": "6928",
+      "company": "エノモト",
+      "date_jst": "2026-06-27 11:00 JST",
+      "title": "山梨県東部を震源とする地震の影響に関するお知らせ",
+      "pdf_url": "https://www.release.tdnet.info/inbs/140120260627582543.pdf",
+      "source_url": "https://www.release.tdnet.info/inbs/140120260627582543.pdf"
+    }
+  ]
 }
