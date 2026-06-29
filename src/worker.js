@@ -222,6 +222,15 @@ function buildSlackMessage(disclosures) {
     .join("\n---\n");
 }
 
+function chunkItems(items, size) {
+  const chunkSize = Math.max(1, Number(size) || MAX_NOTIFY);
+  const chunks = [];
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+  return chunks;
+}
+
 async function postToSlack(message, env) {
   if (env.SLACK_BOT_TOKEN) {
     const response = await fetch("https://slack.com/api/chat.postMessage", {
@@ -271,6 +280,8 @@ async function pollTdnet(env, options = {}) {
     source: "tdnet",
     state_changed: false,
     posted: false,
+    posted_count: 0,
+    message_count: 0,
   };
 
   if (isBootstrap) {
@@ -282,11 +293,15 @@ async function pollTdnet(env, options = {}) {
   }
 
   if (newItems.length > 0) {
-    const notifyItems = newItems.slice(0, Number(env.MAX_NOTIFY || MAX_NOTIFY));
-    await postToSlack(buildSlackMessage(notifyItems), env);
+    const chunks = chunkItems(newItems, env.MAX_NOTIFY || MAX_NOTIFY);
+    for (const chunk of chunks) {
+      await postToSlack(buildSlackMessage(chunk), env);
+    }
     await saveState(env.TDNET_STATE, buildNextState(state, latest));
     result.state_changed = true;
     result.posted = true;
+    result.posted_count = newItems.length;
+    result.message_count = chunks.length;
   }
 
   return result;
@@ -357,6 +372,7 @@ export default {
 export {
   buildNextState,
   buildSlackMessage,
+  chunkItems,
   extractTdnetDocId,
   isJstWeekday,
   parseTdnetDisclosures,

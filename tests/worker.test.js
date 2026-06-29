@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   buildNextState,
   buildSlackMessage,
+  chunkItems,
   extractTdnetDocId,
   isJstWeekday,
   parseTdnetDisclosures,
@@ -76,6 +77,15 @@ describe("worker TDnet parser", () => {
     assert.match(message, /銘柄名: サンドラッグ/);
     assert.match(message, /たいとる: 譲渡制限付株式報酬/);
     assert.match(message, /PDFのりんく: https:\/\/www\.release\.tdnet\.info\/inbs\/140120260626582435\.pdf/);
+  });
+
+  it("chunks large notification batches without dropping items", () => {
+    const items = Array.from({ length: 64 }, (_, index) => ({ id: String(index) }));
+    const chunks = chunkItems(items, 30);
+    assert.deepEqual(
+      chunks.map((chunk) => chunk.length),
+      [30, 30, 4],
+    );
   });
 });
 
