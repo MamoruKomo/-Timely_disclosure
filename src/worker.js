@@ -33,6 +33,12 @@ function normalizeSecurityCode(code) {
   return normalized;
 }
 
+function cleanCompanyName(company) {
+  return normalizeSpaces(company)
+    .replace(/^(?:Ｇ|Ｐ|Ｅ|Ｓ|Ｎ|Ｑ|Ｒ|Ｃ|Ｆ)[－-]/, "")
+    .replace(/[－-]議$/, "");
+}
+
 function extractTdnetDocId(value) {
   const text = normalizeSpaces(value);
   const pdfMatch = text.match(/\/(?<id>\d{18})\.pdf/);
@@ -212,11 +218,15 @@ function buildSlackMessage(disclosures) {
   return disclosures
     .map((disclosure) =>
       [
-        `証券コード: ${disclosure.code}`,
-        `銘柄名: ${disclosure.company}`,
-        `日付: ${disclosure.date_jst}`,
-        `たいとる: ${disclosure.title}`,
-        `PDFのりんく: ${disclosure.pdf_url}`,
+        disclosure.code,
+        "",
+        cleanCompanyName(disclosure.company),
+        "",
+        disclosure.date_jst.replace(" JST", ""),
+        "",
+        disclosure.title,
+        "",
+        disclosure.pdf_url,
       ].join("\n"),
     )
     .join("\n---\n");
@@ -242,8 +252,8 @@ async function postToSlack(message, env) {
       body: JSON.stringify({
         channel: normalizeSpaces(env.SLACK_CHANNEL_ID || DEFAULT_SLACK_CHANNEL_ID),
         text: message,
-        unfurl_links: false,
-        unfurl_media: false,
+        unfurl_links: true,
+        unfurl_media: true,
       }),
     });
     const result = await response.json();
@@ -255,7 +265,7 @@ async function postToSlack(message, env) {
     const response = await fetch(env.SLACK_WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({ text: message, unfurl_links: false, unfurl_media: false }),
+      body: JSON.stringify({ text: message, unfurl_links: true, unfurl_media: true }),
     });
     if (!response.ok) throw new Error(`Slack webhook failed: ${response.status}`);
     return;
@@ -373,6 +383,7 @@ export {
   buildNextState,
   buildSlackMessage,
   chunkItems,
+  cleanCompanyName,
   extractTdnetDocId,
   isJstWeekday,
   parseTdnetDisclosures,

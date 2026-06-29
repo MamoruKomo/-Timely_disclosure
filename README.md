@@ -18,14 +18,18 @@ Cloudflare Workers Cronで1分おきに起動し、コード側でJST土日をsk
 ## Slack投稿形式
 
 ```text
-証券コード: 9983
-銘柄名: ファーストリテイリング
-日付: 2026-06-23 15:00 JST
-たいとる: 決算短信
-PDFのりんく: https://www.release.tdnet.info/inbs/140120260623123400.pdf
+9983
+
+ファーストリテイリング
+
+2026-06-23 15:00
+
+決算短信
+
+https://www.release.tdnet.info/inbs/140120260623123400.pdf
 ```
 
-新着が複数ある場合は `---` で区切って1投稿にまとめます。
+新着が複数ある場合は `---` で区切って1投稿にまとめます。PDF URLは単独行に置き、Slackのリンク展開を有効にしています。
 
 ## Cloudflare Workersで使う
 

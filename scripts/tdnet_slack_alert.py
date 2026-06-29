@@ -94,6 +94,10 @@ def normalize_security_code(code: str) -> str:
     return s
 
 
+def clean_company_name(company: str) -> str:
+    return re.sub(r"[－-]議$", "", re.sub(r"^(?:Ｇ|Ｐ|Ｅ|Ｓ|Ｎ|Ｑ|Ｒ|Ｃ|Ｆ)[－-]", "", normalize_spaces(company)))
+
+
 def extract_tdnet_doc_id(value: str) -> str:
     s = normalize_spaces(value)
     m = re.search(r"/(?P<id>\d{18})\.pdf", s)
@@ -525,11 +529,15 @@ def build_slack_message(disclosures: list[Disclosure]) -> str:
         blocks.append(
             "\n".join(
                 [
-                    f"証券コード: {disclosure.code}",
-                    f"銘柄名: {disclosure.company}",
-                    f"日付: {disclosure.date_jst}",
-                    f"たいとる: {disclosure.title}",
-                    f"PDFのりんく: {disclosure.pdf_url}",
+                    disclosure.code,
+                    "",
+                    clean_company_name(disclosure.company),
+                    "",
+                    disclosure.date_jst.replace(" JST", ""),
+                    "",
+                    disclosure.title,
+                    "",
+                    disclosure.pdf_url,
                 ]
             )
         )
@@ -541,8 +549,8 @@ def post_to_slack(message: str, channel_id: str, bot_token: str, webhook_url: st
         payload = {
             "channel": channel_id,
             "text": message,
-            "unfurl_links": False,
-            "unfurl_media": False,
+            "unfurl_links": True,
+            "unfurl_media": True,
         }
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         request = urllib.request.Request(
@@ -561,7 +569,7 @@ def post_to_slack(message: str, channel_id: str, bot_token: str, webhook_url: st
         return
 
     if webhook_url:
-        payload = {"text": message, "unfurl_links": False, "unfurl_media": False}
+        payload = {"text": message, "unfurl_links": True, "unfurl_media": True}
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         request = urllib.request.Request(
             webhook_url,

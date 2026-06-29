@@ -90,11 +90,22 @@ class TdnetSlackAlertTests(unittest.TestCase):
 
         message = build_slack_message(parse_kabutan_disclosures(html))
 
-        self.assertIn("証券コード: 9983", message)
-        self.assertIn("銘柄名: ファーストリテイリング", message)
-        self.assertIn("日付: 2026-06-23 15:00 JST", message)
-        self.assertIn("たいとる: 決算短信", message)
-        self.assertIn("PDFのりんく: https://www.release.tdnet.info/inbs/140120260623123400.pdf", message)
+        self.assertEqual(
+            message,
+            "\n".join(
+                [
+                    "9983",
+                    "",
+                    "ファーストリテイリング",
+                    "",
+                    "2026-06-23 15:00",
+                    "",
+                    "決算短信",
+                    "",
+                    "https://www.release.tdnet.info/inbs/140120260623123400.pdf",
+                ]
+            ),
+        )
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import {
   buildNextState,
   buildSlackMessage,
   chunkItems,
+  cleanCompanyName,
   extractTdnetDocId,
   isJstWeekday,
   parseTdnetDisclosures,
@@ -51,6 +52,11 @@ describe("worker TDnet parser", () => {
     assert.equal(yyyymmddInJst(new Date("2026-06-26T15:01:00Z")), "20260627");
   });
 
+  it("cleans market prefixes from company names for Slack display", () => {
+    assert.equal(cleanCompanyName("Ｇ－インフォネット"), "インフォネット");
+    assert.equal(cleanCompanyName("Ｇ－サイバダイン－議"), "サイバダイン");
+  });
+
   it("detects JST weekdays and weekends", () => {
     assert.equal(isJstWeekday(new Date("2026-06-26T14:59:00Z")), true);
     assert.equal(isJstWeekday(new Date("2026-06-26T15:00:00Z")), false);
@@ -73,10 +79,20 @@ describe("worker TDnet parser", () => {
 
   it("builds the requested Slack message shape", () => {
     const message = buildSlackMessage(parseTdnetDisclosures(tdnetHtml, "20260627"));
-    assert.match(message, /証券コード: 9989/);
-    assert.match(message, /銘柄名: サンドラッグ/);
-    assert.match(message, /たいとる: 譲渡制限付株式報酬/);
-    assert.match(message, /PDFのりんく: https:\/\/www\.release\.tdnet\.info\/inbs\/140120260626582435\.pdf/);
+    assert.equal(
+      message,
+      [
+        "9989",
+        "",
+        "サンドラッグ",
+        "",
+        "2026-06-27 14:00",
+        "",
+        "譲渡制限付株式報酬としての自己株式の処分に関するお知らせ",
+        "",
+        "https://www.release.tdnet.info/inbs/140120260626582435.pdf",
+      ].join("\n"),
+    );
   });
 
   it("chunks large notification batches without dropping items", () => {
