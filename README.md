@@ -6,15 +6,14 @@ TDnet公式の適時開示一覧を監視し、新着だけSlackへ投稿するb
 
 ## 通知間隔
 
-Cloudflare Workers Cronで、JSTの平日だけ1分おきに監視します。土日は動かしません。
+Cloudflare Workers Cronで1分おきに起動し、コード側でJST土日をskipします。
 
 - 0秒通知ではなく、通常は0〜60秒程度の遅れ
 - TDnet公式Webページを取得して差分検知
 - KVに送信済みIDを保存して重複投稿を防止
 - 初回実行は既存開示を既読登録するだけでSlack投稿しない
 - 新着が多い場合は `MAX_NOTIFY` 件ずつ複数メッセージに分割して、全件投稿後に既読保存
-- Cloudflare CronはUTC解釈なので、`wrangler.jsonc` はJST平日に換算した複数cronで設定
-- コード側にもJST週末skipを入れて、設定ミスでも土日は通知しない
+- Cloudflare CronはUTC解釈なので、cron設定は単純な毎分起動にしてコード側でJST週末skip
 
 ## Slack投稿形式
 
@@ -86,7 +85,7 @@ python3 scripts/tdnet_slack_alert.py --dry-run
 npx wrangler deploy
 ```
 
-デプロイ後はJSTの平日だけ1分ごとに自動監視します。
+デプロイ後は1分ごとに起動し、JSTの平日だけTDnetを監視します。
 
 ## 手動確認
 
