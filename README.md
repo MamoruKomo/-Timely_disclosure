@@ -1,4 +1,4 @@
-# TDnet Slack Alert
+# Timely Disclosure Slack Alert
 
 TDnet公式の適時開示一覧を監視し、新着だけSlackへ投稿するbotです。
 
@@ -6,14 +6,24 @@ TDnet公式の適時開示一覧を監視し、新着だけSlackへ投稿するb
 
 ## 通知間隔
 
-Cloudflare Workers Cronで1分おきに起動し、コード側でJST土日をskipします。
+Cloudflare Workers Cronで1分おきに起動し、コード側でJPX休業日をskipします。
 
 - 0秒通知ではなく、通常は0〜60秒程度の遅れ
 - TDnet公式Webページを取得して差分検知
+- JPXの営業時間・休業日一覧を参照し、休業日は動かさない
+- J-Quantsの商品区分でいうETF、REIT、外国株、投資信託などに相当する開示は通知しない
+- `block.txt` 由来の除外ワードに一致する開示は通知しない
+- 重要ワードに一致する開示はSlack本文の先頭に `重要` を付ける
 - KVに送信済みIDを保存して重複投稿を防止
 - 初回実行は既存開示を既読登録するだけでSlack投稿しない
 - 新着が多い場合は `MAX_NOTIFY` 件ずつ複数メッセージに分割して、全件投稿後に既読保存
-- Cloudflare CronはUTC解釈なので、cron設定は単純な毎分起動にしてコード側でJST週末skip
+- Cloudflare CronはUTC解釈なので、cron設定は単純な毎分起動にしてコード側で営業日判定
+
+## 取得元について
+
+取得元はTDnet公式HTMLです。
+
+BRiSK適時開示は、利用規約でデータの加工、第三者提供/共有、私的な資産運用目的以外の利用、業務目的利用が禁止されているため、このbotの取得元には使わない方針です。
 
 ## Slack投稿形式
 
@@ -27,6 +37,22 @@ Cloudflare Workers Cronで1分おきに起動し、コード側でJST土日をsk
 決算短信
 
 https://www.release.tdnet.info/inbs/140120260623123400.pdf
+```
+
+重要ワードに一致した場合:
+
+```text
+重要
+
+4444
+
+インフォネット
+
+2026-06-29 15:00
+
+株主優待の一部内容変更（優待品目の変更）に関するお知らせ
+
+https://storage.googleapis.com/disclosed-file-bucket-d4575ee/20260629583350/1/general.pdf
 ```
 
 新着が複数ある場合は `---` で区切って1投稿にまとめます。PDF URLは単独行に置き、Slackのリンク展開を有効にしています。
@@ -89,7 +115,7 @@ python3 scripts/tdnet_slack_alert.py --dry-run
 npx wrangler deploy
 ```
 
-デプロイ後は1分ごとに起動し、JSTの平日だけTDnetを監視します。
+デプロイ後は1分ごとに起動し、JPX営業日だけTDnet公式の適時開示を監視します。
 
 ## 手動確認
 
